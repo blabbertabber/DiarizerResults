@@ -2,7 +2,7 @@
 
 meetingGuid = window.location.href.split('?')[1];
 meetingGuid = meetingGuid.split('=')[1];
-meetingURL = 'https://diarizer.blabbertabber.com/' + meetingGuid + '/diarization.txt';
+meetingURL = 'https://diarizer.com/' + meetingGuid + '/diarization.txt';
 
 jQuery('#xyz').html("jQuery works.  But we haven't downloaded the file yet");
 
