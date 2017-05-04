@@ -26,12 +26,19 @@ jQuery.get(meetingURL, function (data) {
         }
     });
     jQuery('#abc').html(out); // + new Date());
+    var times = "";
+    for (var spkr in speakerTimes) {
+        console.log(spkr);
+        times += "time " + spkr + ": " + speakerTimes[spkr].time + "<br />";
+    }
+
+    jQuery('#ghi').html(times);
 });
 
 var out = "";
 console.log(speakerTimes);
 
-for (var spkr in speakerTimes ) {
+for (var spkr in speakerTimes) {
     console.log(spkr);
     out += "time: " + speakerTimes[spkr].time + "<br />";
 }
