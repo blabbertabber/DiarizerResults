@@ -2,13 +2,12 @@
 
 meetingGuid = window.location.href.split('?')[1];
 meetingGuid = meetingGuid.split('=')[1];
-meetingURL = 'https://diarizer.com/' + meetingGuid + '/diarization.txt';
-
-jQuery('#xyz').html("jQuery works.  But we haven't downloaded the file yet");
+diarizationURL = 'https://diarizer.com/' + meetingGuid + '/diarization.txt';
+transcriptionURL = 'https://diarizer.com/' + meetingGuid + '/transcription.txt';
 
 var speakerTimes = {};
 
-jQuery.get(meetingURL, function (data) {
+jQuery.get(diarizationURL, function (data) {
     var lines = data.split(/\n/);
     var out = "";
     lines.forEach(function (line) {
@@ -25,23 +24,18 @@ jQuery.get(meetingURL, function (data) {
             speakerTimes[speakerNum].time += endTime - startTime;
         }
     });
-    jQuery('#abc').html(out); // + new Date());
     var times = "";
     for (var spkr in speakerTimes) {
         console.log(spkr);
         times += "time " + spkr + ": " + speakerTimes[spkr].time + "<br />";
     }
-
-    jQuery('#ghi').html(times);
 });
 
-var out = "";
-console.log(speakerTimes);
-
-for (var spkr in speakerTimes) {
-    console.log(spkr);
-    out += "time: " + speakerTimes[spkr].time + "<br />";
-}
-
-jQuery('#def').html(out);
-// jQuery('#ghi').html(speakerTimes["1"].time);
+jQuery.get(transcriptionURL, function (data) {
+    var lines = data.split(/\n/);
+    var out = "";
+    lines.forEach(function (line) {
+        out += line + "<br/>";
+    });
+    jQuery('#transcription').html(out);
+});
