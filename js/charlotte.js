@@ -16,11 +16,12 @@ jQuery.get(diarizationURL, function (data) {
     }
     for (var spkr in speakerTimes) {
         console.log(spkr);
-        // display the raw time values
-        jQuery('#speaker_time_' + spkr).html(speakerTimes[spkr]);
-        // calculate and display the percent
-        percent = speakerTimes[spkr] / totalTime;
-        jQuery('#speaker_percent_' + spkr).html(percent);
+        speakerTime = Math.round(speakerTimes[spkr]);
+        percent = (Math.round(10000 * speakerTimes[spkr] / totalTime) ) / 100;
+        speakerCell = '<td>Speaker ' + spkr + '</td>';
+        timeCell = '<td align="right">' + speakerTime + '</td>';
+        percentCell = '<td align="right">' + percent + '%</td>';
+        $('#speaker_table > tbody:last-child').append('<tr>' + speakerCell + timeCell + percentCell + '</tr>');
     }
 });
 
