@@ -1,9 +1,9 @@
 // https://diarizer.blabbertabber.com?meeting=1766e8dc-28e1-11e7-a2c1-000c291285ff
 
-meetingGuid = window.location.href.split('?')[1];
-meetingGuid = meetingGuid.split('=')[1];
-diarizationURL = 'https://diarizer.com/' + meetingGuid + '/diarization.txt';
-transcriptionURL = 'https://diarizer.com/' + meetingGuid + '/transcription.txt';
+HostURL = window.location.href.split('?')[0];
+meetingGuid = window.location.href.split('?')[1].split('=')[1];
+diarizationURL = HostURL + '/' + meetingGuid + '/diarization.txt';
+transcriptionURL = HostURL + '/' + meetingGuid + '/transcription.txt';
 
 jQuery.get(diarizationURL, function (data) {
     var lines = data.split(/\n/);
