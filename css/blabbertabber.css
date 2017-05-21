@@ -37,20 +37,57 @@
 
 /* Speaker Styles */
 .speaker-1 {
-	background-color: #ffaaaa; }
+    background-color: #E25930;
+}
 .speaker-2 {
-	background-color: #fff7aa; }
+    background-color: #C46935;
+}
 .speaker-3 {
-	background-color: #407f7f; }
+    background-color: #AA7870;
+}
 .speaker-4 {
-	background-color: #8a458a; }
+    background-color: #8782B2;
+}
 .speaker-5 {
-	background-color: #d4a76a; }
+    background-color: #9A7D95;
+}
 .speaker-6 {
-	background-color: #a5c663; }
+    background-color: #B6714B;
+}
 .speaker-7 {
-	background-color: #565695; }
+    background-color: #D1612F;
+}
 .speaker-8 {
-	background-color: #d4886a; }
+    background-color: #F65333;
+}
 .speaker-9 {
-	background-color: #d4d46a; }
+    background-color: #6C90DB;
+}
+
+.speaker-10 {
+    background-color: #50A7F3;
+}
+
+.speaker-11 {
+    background-color: #35C8FD;
+}
+
+.speaker-12 {
+    background-color: #09F1F1;
+}
+
+.speaker-13 {
+    background-color: #1FDBFB;
+}
+
+.speaker-14 {
+    background-color: #46B7FA;
+}
+
+.speaker-15 {
+    background-color: #5F9BE9;
+}
+
+.speaker-16 {
+    background-color: #7788CA;
+}
