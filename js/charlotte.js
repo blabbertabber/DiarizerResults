@@ -24,7 +24,7 @@ getSpeakerTimes = function (lines) {
     return speakerTimes;
 };
 
-jQuery.get(diarizationURL, function (data) {
+function displayDiarization(data) {
     var lines = data.split(/\n/);
     var totalTime = 0;
     speakerTimes = getSpeakerTimes(lines);
@@ -48,7 +48,7 @@ jQuery.get(diarizationURL, function (data) {
             '</div>';
         $('#speaker_bar').append(bar);
     }
-});
+}
 
 function displayTranscription(info) {
     var lines = info.split(/\n/);
@@ -80,7 +80,31 @@ function displayWaitTranscription(info) {
     // TODO(brendan): instead of reload, trigger AJAX call that detects presence of file and THEN call reload
     setTimeout(function () {
         window.location.reload(true);
-    }, 60000);
+    }, 2000);
+}
+
+function displayWaitDiarization(data) {
+    // TODO(brian) replace Palantír with "crystal ball" when moving to production
+    jQuery('#diarization').html("<div class=\"row\">\n" +
+        "    <div class=\"col-md-6 col-md-offset-3\">\n" +
+        "        <h1>Processing...</h1>\n" +
+        "\n" +
+        "    </div>\n" +
+        "\n" +
+        "    <div class=\"row\">\n" +
+        "        <div class=\"col-md-6 col-md-offset-3\">\n" +
+        "            <div>\n" +
+        "                <br/>\n" +
+        "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your file is\n" +
+        "                    00kb. Our Palant&iacute;r predicts your results will be ready in 00 minutes.</p>\n" +
+        "            </div>\n" +
+        "        </div>\n" +
+        "    </div>\n" +
+        "</div>\n");
+    // TODO(brendan): instead of reload, trigger AJAX call that detects presence of file and THEN call reload
+    setTimeout(function () {
+        window.location.reload(true);
+    }, 2000);
 }
 
 $.ajax({
