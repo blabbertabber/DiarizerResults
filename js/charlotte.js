@@ -25,6 +25,27 @@ getSpeakerTimes = function (lines) {
 };
 
 function displayDiarization(data) {
+    var diarizationHtml = "<div id=\"speaker_bar\" class=\"progress\">\n" +
+        "    </div>\n" +
+        "\n" +
+        "    <div class=\"panel panel-default\">\n" +
+        "    <div class=\"panel-heading\">\n" +
+        "    <h3 class=\"panel-title\">Aggregate View</h3>\n" +
+        "</div>\n" +
+        "<div class=\"panel-body\">\n" +
+        "    <table class=\"table\" id=\"speaker_table\">\n" +
+        "    <thead>\n" +
+        "    <tr>\n" +
+        "    <th>Speaker</th>\n" +
+        "    <th style=\"text-align: right\">Duration (seconds)</th>\n" +
+        "    <th style=\"text-align: right\">Percent of Total Speaking Time</th>\n" +
+        "</tr>\n" +
+        "</thead>\n" +
+        "<tbody>\n" +
+        "</tbody>\n" +
+        "</table>\n" +
+        "</div>\n" +
+        "</div>\n";
     var lines = data.split(/\n/);
     var totalTime = 0;
     speakerTimes = getSpeakerTimes(lines);
@@ -33,6 +54,7 @@ function displayDiarization(data) {
     for (var spkr in speakerTimes) {
         totalTime += speakerTimes[spkr];
     }
+    jQuery('#diarization').html(diarizationHtml);
     for (var spkr in speakerTimes) {
         console.log(spkr);
         speakerTime = Math.round(speakerTimes[spkr]);
@@ -59,32 +81,7 @@ function displayTranscription(info) {
     jQuery('#transcription').html(out);
 }
 
-function displayWaitTranscription(info) {
-    // TODO(brian) replace Palantír with "crystal ball" when moving to production
-    jQuery('#transcription').html("<div class=\"row\">\n" +
-        "    <div class=\"col-md-6 col-md-offset-3\">\n" +
-        "        <h1>Processing...</h1>\n" +
-        "\n" +
-        "    </div>\n" +
-        "\n" +
-        "    <div class=\"row\">\n" +
-        "        <div class=\"col-md-6 col-md-offset-3\">\n" +
-        "            <div>\n" +
-        "                <br/>\n" +
-        "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your file is\n" +
-        "                    00kb. Our Palant&iacute;r predicts your results will be ready in 00 minutes.</p>\n" +
-        "            </div>\n" +
-        "        </div>\n" +
-        "    </div>\n" +
-        "</div>\n");
-    // TODO(brendan): instead of reload, trigger AJAX call that detects presence of file and THEN call reload
-    setTimeout(function () {
-        window.location.reload(true);
-    }, 2000);
-}
-
 function displayWaitDiarization(data) {
-    // TODO(brian) replace Palantír with "crystal ball" when moving to production
     jQuery('#diarization').html("<div class=\"row\">\n" +
         "    <div class=\"col-md-6 col-md-offset-3\">\n" +
         "        <h1>Processing...</h1>\n" +
@@ -96,31 +93,54 @@ function displayWaitDiarization(data) {
         "            <div>\n" +
         "                <br/>\n" +
         "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your file is\n" +
-        "                    00kb. Our Palant&iacute;r predicts your results will be ready in 00 minutes.</p>\n" +
+        "                    0MB. Our crystal ball predicts your results will be ready in 00 minutes.</p>\n" +
         "            </div>\n" +
         "        </div>\n" +
         "    </div>\n" +
         "</div>\n");
     // TODO(brendan): instead of reload, trigger AJAX call that detects presence of file and THEN call reload
-    setTimeout(function () {
-        window.location.reload(true);
-    }, 2000);
+    setTimeout(diarization, 2000);
 }
 
-$.ajax({
-    url: transcriptionURL,
-    type: 'get',
-    error: displayWaitTranscription,
-    success: displayTranscription
-});
+function displayWaitTranscription(info) {
+    var transcriptionHtml = "<div class=\"row\">\n" +
+        "    <div class=\"col-md-6 col-md-offset-3\">\n" +
+        "        <h1>Processing...</h1>\n" +
+        "\n" +
+        "    </div>\n" +
+        "\n" +
+        "    <div class=\"row\">\n" +
+        "        <div class=\"col-md-6 col-md-offset-3\">\n" +
+        "            <div>\n" +
+        "                <br/>\n" +
+        "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your file is\n" +
+        "                    0MB. Our crystal ball predicts your results will be ready in 00 minutes.</p>\n" +
+        "            </div>\n" +
+        "        </div>\n" +
+        "    </div>\n" +
+        "</div>\n";
+    jQuery('#transcription').html(transcriptionHtml);
+    // TODO(brendan): instead of reload, trigger AJAX call that detects presence of file and THEN call reload
+    setTimeout(transcription, 2000);
+}
 
-$.ajax({
-    url: diarizationURL,
-    type: 'get',
-    error: displayWaitDiarization,
-    success: displayDiarization
-});
+diarization();
+transcription();
 
-// jQuery.get(transcriptionURL, function (data) {
-//     displayTranscription(data);
-// });
+function diarization() {
+    $.ajax({
+        url: diarizationURL,
+        type: 'get',
+        error: displayWaitDiarization,
+        success: displayDiarization
+    });
+}
+
+function transcription() {
+    $.ajax({
+        url: transcriptionURL,
+        type: 'get',
+        error: displayWaitTranscription,
+        success: displayTranscription
+    });
+}
