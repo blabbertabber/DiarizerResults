@@ -4,6 +4,7 @@ HostURL = window.location.href.split('?')[0];
 meetingGuid = window.location.href.split('?')[1].split('=')[1];
 diarizationURL = HostURL + '/' + meetingGuid + '/diarization.txt';
 transcriptionURL = HostURL + '/' + meetingGuid + '/transcription.txt';
+timesAndSizeURL = HostURL + '/' + meetingGuid + '/times_and_size.json';
 
 getSpeakerTimes = function (lines) {
     var speakerTimes = {};
@@ -23,6 +24,12 @@ getSpeakerTimes = function (lines) {
     });
     return speakerTimes;
 };
+
+function initializeTimesAndSize(data) {
+    wavFileSizeInBytes = data.wav_file_size_in_bytes;
+    estimatedDiarizationFinishTime = data.estimated_diarization_finish_time;
+    estimatedTranscriptionFinishTime = data.estimated_transcription_finish_time;
+}
 
 function displayDiarization(data) {
     var diarizationHtml = "<div id=\"speaker_bar\" class=\"progress\">\n" +
@@ -93,7 +100,9 @@ function displayWaitDiarization(data) {
         "            <div>\n" +
         "                <br/>\n" +
         "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your file is\n" +
-        "                    0MB. Our crystal ball predicts your results will be ready in 00 minutes.</p>\n" +
+        "                    " + Math.round(wavFileSizeInBytes/(1024*1024)*100)/100 +
+                             " MBytes! Our crystal ball predicts your results will be ready at " +
+                             estimatedDiarizationFinishTime + ".</p>\n" +
         "            </div>\n" +
         "        </div>\n" +
         "    </div>\n" +
@@ -124,8 +133,19 @@ function displayWaitTranscription(info) {
     setTimeout(transcription, 2000);
 }
 
+timesAndSizeFromServer();
 diarization();
 transcription();
+
+// timesAndSizeURL
+
+function timesAndSizeFromServer() {
+    $.ajax({
+        dataType: "json",
+        url: timesAndSizeURL,
+        success: initializeTimesAndSize
+    });
+}
 
 function diarization() {
     $.ajax({
