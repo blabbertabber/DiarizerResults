@@ -6,7 +6,8 @@ var HostURL = window.location.href.split('?')[0];
 var meetingGuid = window.location.href.split('?')[1].split('=')[1];
 var diarizationURL = HostURL + '/' + meetingGuid + '/diarization.txt';
 var transcriptionURL = HostURL + '/' + meetingGuid + '/transcription.txt';
-var transcriptionFinishedURL = HostURL + '/' + meetingGuid + '/05_transcription_finished';
+var diarizationReadyURL = HostURL + '/' + meetingGuid + '/04_diarization_finished';
+var transcriptionReadyURL = HostURL + '/' + meetingGuid + '/05_transcription_finished';
 var timesAndSizeURL = HostURL + '/' + meetingGuid + '/times_and_size.json';
 var estimatedDiarizationFinishTime;
 var estimatedTranscriptionFinishTime;
@@ -35,6 +36,13 @@ function initializeTimesAndSize(data) {
     wavFileSizeInBytes = data.wav_file_size_in_bytes;
     estimatedDiarizationFinishTime = data.estimated_diarization_finish_time;
     estimatedTranscriptionFinishTime = data.estimated_transcription_finish_time;
+}
+
+function diarizationReady() {
+    $.ajax({
+        url: diarizationURL,
+        success: displayDiarization
+    });
 }
 
 function displayDiarization(data) {
@@ -85,7 +93,7 @@ function displayDiarization(data) {
     }
 }
 
-function displayWaitDiarization(data) {
+function diarizationNotReady() {
     var finishTime = new Date(estimatedDiarizationFinishTime);
     var duration = finishTime - Date.now();
     jQuery('#diarization').html("<div class=\"row\">\n" +
@@ -101,38 +109,38 @@ function displayWaitDiarization(data) {
         "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your recorded  meeting" +
         "                    was " + durationOfMeeting(wavFileSizeInBytes) + " long. " +
         "                    We think we'll have figured out who spoke in " +
-        secondsToString(duration / 1000) + ".</p>\n" +
+        millisecondsToString(duration) + ".</p>\n" +
         "            </div>\n" +
         "        </div>\n" +
         "    </div>\n" +
         "</div>\n");
-    setTimeout(diarization, 2000);
+    setTimeout(diarization, 3000);
 }
 
 function durationOfMeeting(wavFileSizeInBytes) {
-    var seconds = wavFileSizeInBytes / 32000;
-    return secondsToString(seconds);
+    var milliseconds = wavFileSizeInBytes / 32; // 32000 bytes/sec => 32 bytes/millisecond
+    return millisecondsToString(milliseconds);
 }
 
-function secondsToString(seconds) {
+function millisecondsToString(milliseconds) {
+    var seconds = Math.floor((milliseconds / 1000) % 60);
+    var minutes = Math.floor((milliseconds / 1000 / 60) % 60);
+    var hours = Math.floor((milliseconds / (1000 * 60 * 60)) % 24);
+
     var timeString = "";
-    var minutes = Math.round(seconds / 60);
-    var hours = Math.round(minutes / 60);
     if (hours > 0) {
-        timeString = " " + hours + " hours";
+        timeString = " " + hours + (hours !== 1 ? " hours" : " hour");
     }
-    minutes %= 60;
     if (minutes > 0) {
-        timeString += " " + minutes + " minutes";
+        timeString += " " + minutes + (minutes !== 1 ? " minutes" : " minute");
     }
-    seconds = Math.round(seconds % 60);
-    if (seconds > 0) {
-        timeString += " " + seconds + " seconds";
+    if (seconds !== 0 || timeString === "") { // don't display 0 seconds unless that's the only time you got (no hours or minutes)
+        timeString += " " + seconds + (seconds !== 1 ? " seconds" : " second");
     }
     return timeString;
 }
 
-function displayWaitTranscription(info) {
+function transcriptionNotReady() {
     var finishTime = new Date(estimatedTranscriptionFinishTime);
     var duration = finishTime - Date.now();
     var transcriptionHtml = "<div class=\"row\">\n" +
@@ -148,7 +156,7 @@ function displayWaitTranscription(info) {
         "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your recorded  meeting" +
         "                    was " + durationOfMeeting(wavFileSizeInBytes) + " long. " +
         "                    We think we'll finish transcribing it in " +
-        secondsToString(duration / 1000) + ".</p>\n" +
+        millisecondsToString(duration) + ".</p>\n" +
         "            </div>\n" +
         "        </div>\n" +
         "    </div>\n" +
@@ -158,9 +166,8 @@ function displayWaitTranscription(info) {
         url: transcriptionURL,
         type: 'get',
         success: displayTranscription
-    });
-    displayTranscription(info); // show the transcription so far
-    setTimeout(transcription, 2000);
+    }); // show as much transcription as we've gotten so far
+    setTimeout(transcription, 3000);
 }
 
 function displayTranscription(info) {
@@ -172,20 +179,13 @@ function displayTranscription(info) {
     jQuery('#transcription').html(out);
 }
 
-function displayNoWaitTranscription(info) {
+function transcriptionReady() {
     jQuery('#transcription_wait').html(""); // clear out the "Processing" notification
     $.ajax({
         url: transcriptionURL,
-        type: 'get',
         success: displayTranscription
     });
 }
-
-timesAndSizeFromServer();
-diarization();
-transcription();
-
-// timesAndSizeURL
 
 function timesAndSizeFromServer() {
     $.ajax({
@@ -197,18 +197,20 @@ function timesAndSizeFromServer() {
 
 function diarization() {
     $.ajax({
-        url: diarizationURL,
-        type: 'get',
-        error: displayWaitDiarization,
-        success: displayDiarization
+        url: diarizationReadyURL,
+        error: diarizationNotReady,
+        success: diarizationReady
     });
 }
 
 function transcription() {
     $.ajax({
-        url: transcriptionFinishedURL,
-        type: 'get',
-        error: displayWaitTranscription,
-        success: displayNoWaitTranscription
+        url: transcriptionReadyURL,
+        error: transcriptionNotReady,
+        success: transcriptionReady
     });
 }
+
+timesAndSizeFromServer();
+diarization();
+transcription();
