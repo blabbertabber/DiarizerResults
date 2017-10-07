@@ -1,10 +1,15 @@
-// https://diarizer.blabbertabber.com?meeting=1766e8dc-28e1-11e7-a2c1-000c291285ff
+// https://diarizer.blabbertabber.com?meeting=test
 
-HostURL = window.location.href.split('?')[0];
-meetingGuid = window.location.href.split('?')[1].split('=')[1];
-diarizationURL = HostURL + '/' + meetingGuid + '/diarization.txt';
-transcriptionURL = HostURL + '/' + meetingGuid + '/transcription.txt';
-timesAndSizeURL = HostURL + '/' + meetingGuid + '/times_and_size.json';
+
+// Global variables are the devil's candy
+var HostURL = window.location.href.split('?')[0];
+var meetingGuid = window.location.href.split('?')[1].split('=')[1];
+var diarizationURL = HostURL + '/' + meetingGuid + '/diarization.txt';
+var transcriptionURL = HostURL + '/' + meetingGuid + '/transcription.txt';
+var transcriptionFinishedURL = HostURL + '/' + meetingGuid + '/05_transcription_finished';
+var timesAndSizeURL = HostURL + '/' + meetingGuid + '/times_and_size.json';
+var estimatedDiarizationFinishTime;
+var estimatedTranscriptionFinishTime;
 
 getSpeakerTimes = function (lines) {
     var speakerTimes = {};
@@ -62,7 +67,7 @@ function displayDiarization(data) {
         totalTime += speakerTimes[spkr];
     }
     jQuery('#diarization').html(diarizationHtml);
-    for (var spkr in speakerTimes) {
+    for (spkr in speakerTimes) {
         console.log(spkr);
         speakerTime = Math.round(speakerTimes[spkr]);
         percent = (Math.floor(10000 * speakerTimes[spkr] / totalTime) ) / 100;
@@ -79,16 +84,8 @@ function displayDiarization(data) {
     }
 }
 
-function displayTranscription(info) {
-    var lines = info.split(/\n/);
-    var out = "";
-    lines.forEach(function (line) {
-        out += line + "<br/>";
-    });
-    jQuery('#transcription').html(out);
-}
-
 function displayWaitDiarization(data) {
+    var finishTime = new Date(estimatedDiarizationFinishTime);
     jQuery('#diarization').html("<div class=\"row\">\n" +
         "    <div class=\"col-md-6 col-md-offset-3\">\n" +
         "        <h1>Processing...</h1>\n" +
@@ -99,19 +96,38 @@ function displayWaitDiarization(data) {
         "        <div class=\"col-md-6 col-md-offset-3\">\n" +
         "            <div>\n" +
         "                <br/>\n" +
-        "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your file is\n" +
-        "                    " + Math.round(wavFileSizeInBytes/(1024*1024)*100)/100 +
-                             " MBytes! Our crystal ball predicts your results will be ready at " +
-                             estimatedDiarizationFinishTime + ".</p>\n" +
+        "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your recorded  meeting" +
+        "                    was " + durationOfMeeting(wavFileSizeInBytes) + "long. " +
+        "                    We think we'll have figured out who spoke when by " +
+        finishTime + ".</p>\n" +
         "            </div>\n" +
         "        </div>\n" +
         "    </div>\n" +
         "</div>\n");
-    // TODO(brendan): instead of reload, trigger AJAX call that detects presence of file and THEN call reload
     setTimeout(diarization, 2000);
 }
 
+function durationOfMeeting(wavFileSizeInBytes) {
+    var timeString = "";
+    var seconds = wavFileSizeInBytes / 32000;
+    var minutes = Math.round(seconds / 60);
+    var hours = Math.round(minutes / 60);
+    if (hours > 0) {
+        timeString = hours + " hours ";
+    }
+    minutes %= 60;
+    if (minutes > 0) {
+        timeString += minutes + " minutes ";
+    }
+    seconds = Math.round(seconds % 60);
+    if (seconds > 0) {
+        timeString += seconds + " seconds ";
+    }
+    return timeString;
+}
+
 function displayWaitTranscription(info) {
+    var finishTime = new Date(estimatedTranscriptionFinishTime);
     var transcriptionHtml = "<div class=\"row\">\n" +
         "    <div class=\"col-md-6 col-md-offset-3\">\n" +
         "        <h1>Processing...</h1>\n" +
@@ -122,15 +138,40 @@ function displayWaitTranscription(info) {
         "        <div class=\"col-md-6 col-md-offset-3\">\n" +
         "            <div>\n" +
         "                <br/>\n" +
-        "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your file is\n" +
-        "                    0MB. Our crystal ball predicts your results will be ready in 00 minutes.</p>\n" +
+        "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your recorded  meeting" +
+        "                    was " + durationOfMeeting(wavFileSizeInBytes) + "long. " +
+        "                    We think we'll finish transcribing it at " +
+        finishTime + ".</p>\n" +
         "            </div>\n" +
         "        </div>\n" +
         "    </div>\n" +
         "</div>\n";
-    jQuery('#transcription').html(transcriptionHtml);
-    // TODO(brendan): instead of reload, trigger AJAX call that detects presence of file and THEN call reload
+    jQuery('#transcription_wait').html(transcriptionHtml);
+    $.ajax({
+        url: transcriptionURL,
+        type: 'get',
+        success: displayTranscription
+    });
+    displayTranscription(info); // show the transcription so far
     setTimeout(transcription, 2000);
+}
+
+function displayTranscription(info) {
+    var lines = info.split(/\n/);
+    var out = "";
+    lines.forEach(function (line) {
+        out += line + "<br/>";
+    });
+    jQuery('#transcription').html(out);
+}
+
+function displayNoWaitTranscription(info) {
+    jQuery('#transcription_wait').html(""); // clear out the "Processing" notification
+    $.ajax({
+        url: transcriptionURL,
+        type: 'get',
+        success: displayTranscription
+    });
 }
 
 timesAndSizeFromServer();
@@ -158,9 +199,9 @@ function diarization() {
 
 function transcription() {
     $.ajax({
-        url: transcriptionURL,
+        url: transcriptionFinishedURL,
         type: 'get',
         error: displayWaitTranscription,
-        success: displayTranscription
+        success: displayNoWaitTranscription
     });
 }
