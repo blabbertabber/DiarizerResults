@@ -10,6 +10,7 @@ var transcriptionFinishedURL = HostURL + '/' + meetingGuid + '/05_transcription_
 var timesAndSizeURL = HostURL + '/' + meetingGuid + '/times_and_size.json';
 var estimatedDiarizationFinishTime;
 var estimatedTranscriptionFinishTime;
+var wavFileSizeInBytes;
 
 getSpeakerTimes = function (lines) {
     var speakerTimes = {};
@@ -86,6 +87,7 @@ function displayDiarization(data) {
 
 function displayWaitDiarization(data) {
     var finishTime = new Date(estimatedDiarizationFinishTime);
+    var duration = finishTime - Date.now();
     jQuery('#diarization').html("<div class=\"row\">\n" +
         "    <div class=\"col-md-6 col-md-offset-3\">\n" +
         "        <h1>Processing...</h1>\n" +
@@ -97,9 +99,9 @@ function displayWaitDiarization(data) {
         "            <div>\n" +
         "                <br/>\n" +
         "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your recorded  meeting" +
-        "                    was " + durationOfMeeting(wavFileSizeInBytes) + "long. " +
-        "                    We think we'll have figured out who spoke when by " +
-        finishTime + ".</p>\n" +
+        "                    was " + durationOfMeeting(wavFileSizeInBytes) + " long. " +
+        "                    We think we'll have figured out who spoke in " +
+        secondsToString(duration / 1000) + ".</p>\n" +
         "            </div>\n" +
         "        </div>\n" +
         "    </div>\n" +
@@ -108,26 +110,31 @@ function displayWaitDiarization(data) {
 }
 
 function durationOfMeeting(wavFileSizeInBytes) {
-    var timeString = "";
     var seconds = wavFileSizeInBytes / 32000;
+    return secondsToString(seconds);
+}
+
+function secondsToString(seconds) {
+    var timeString = "";
     var minutes = Math.round(seconds / 60);
     var hours = Math.round(minutes / 60);
     if (hours > 0) {
-        timeString = hours + " hours ";
+        timeString = " " + hours + " hours";
     }
     minutes %= 60;
     if (minutes > 0) {
-        timeString += minutes + " minutes ";
+        timeString += " " + minutes + " minutes";
     }
     seconds = Math.round(seconds % 60);
     if (seconds > 0) {
-        timeString += seconds + " seconds ";
+        timeString += " " + seconds + " seconds";
     }
     return timeString;
 }
 
 function displayWaitTranscription(info) {
     var finishTime = new Date(estimatedTranscriptionFinishTime);
+    var duration = finishTime - Date.now();
     var transcriptionHtml = "<div class=\"row\">\n" +
         "    <div class=\"col-md-6 col-md-offset-3\">\n" +
         "        <h1>Processing...</h1>\n" +
@@ -139,9 +146,9 @@ function displayWaitTranscription(info) {
         "            <div>\n" +
         "                <br/>\n" +
         "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your recorded  meeting" +
-        "                    was " + durationOfMeeting(wavFileSizeInBytes) + "long. " +
-        "                    We think we'll finish transcribing it at " +
-        finishTime + ".</p>\n" +
+        "                    was " + durationOfMeeting(wavFileSizeInBytes) + " long. " +
+        "                    We think we'll finish transcribing it in " +
+        secondsToString(duration / 1000) + ".</p>\n" +
         "            </div>\n" +
         "        </div>\n" +
         "    </div>\n" +
