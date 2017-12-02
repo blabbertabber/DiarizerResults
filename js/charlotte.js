@@ -200,6 +200,7 @@ function transcription() {
 
 if (typeof module !== 'undefined') {
     module.exports = {
-        newlinesToHTMLBreaks: newlinesToHTMLBreaks
+        newlinesToHTMLBreaks: newlinesToHTMLBreaks,
+        millisecondsToString: millisecondsToString
     };
 }
