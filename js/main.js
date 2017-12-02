@@ -1,5 +1,3 @@
-require('./charlotte');
-
 // Global variables are the devil's candy
 var HostURL = window.location.href.split('?')[0];
 var meetingGuid = window.location.href.split('?')[1].split('=')[1];
@@ -15,4 +13,3 @@ var wavFileSizeInBytes;
 timesAndSizeFromServer();
 diarization();
 transcription();
-
