@@ -1,6 +1,6 @@
 // https://diarizer.blabbertabber.com?meeting=test
 
-getSpeakerTimes = function (lines) {
+getAaltoSpeakerTimes = function (lines) {
     var speakerTimes = {};
     lines.forEach(function (line) {
         if (line.length > 0) {
@@ -17,20 +17,89 @@ getSpeakerTimes = function (lines) {
     return speakerTimes;
 };
 
+getIBMSpeakerTimes = function (speakerData) {
+    var speakerTimes = {};
+    speakerData.forEach(function (speakerDatum) {
+        speakerNum = speakerDatum.speaker;
+        if (!speakerTimes[speakerNum]) {
+            speakerTimes[speakerNum] = 0;
+        }
+        speakerTimes[speakerNum] += speakerDatum.to - speakerDatum.from;
+    });
+    return speakerTimes;
+};
+
 function initializeTimesAndSize(data) {
+    diarizer = data.diarizer;
+    transcriber = data.transcriber;
     wavFileSizeInBytes = data.wav_file_size_in_bytes;
     estimatedDiarizationFinishTime = data.estimated_diarization_finish_time;
     estimatedTranscriptionFinishTime = data.estimated_transcription_finish_time;
 }
 
 function diarizationReady() {
-    $.ajax({
-        url: diarizationURL,
-        success: displayDiarization
-    });
+    switch (diarizer) {
+        case 'IBM':
+            $.ajax({
+                url: diarizationIBMURL,
+                success: displayIBMDiarization
+            });
+            break;
+        case 'Aalto':
+            $.ajax({
+                url: diarizationAaltoURL,
+                success: displayAaltoDiarization
+            });
+            break;
+        default:
+    }
 }
 
-function displayDiarization(data) {
+function displayIBMDiarization(data) {
+    var diarizationHtml = "<div id=\"speaker_bar\" class=\"progress\">\n" +
+        "    </div>\n" +
+        "\n" +
+        "    <div class=\"panel panel-default\">\n" +
+        "    <div class=\"panel-heading\">\n" +
+        "    <h3 class=\"panel-title\">Aggregate View</h3>\n" +
+        "</div>\n" +
+        "<div class=\"panel-body\">\n" +
+        "    <table class=\"table\" id=\"speaker_table\">\n" +
+        "    <thead>\n" +
+        "    <tr>\n" +
+        "    <th>Speaker</th>\n" +
+        "    <th style=\"text-align: right\">Duration (seconds)</th>\n" +
+        "    <th style=\"text-align: right\">Percent of Total Speaking Time</th>\n" +
+        "</tr>\n" +
+        "</thead>\n" +
+        "<tbody>\n" +
+        "</tbody>\n" +
+        "</table>\n" +
+        "</div>\n" +
+        "</div>\n";
+    var totalTime = 0;
+    speakerTimes = getIBMSpeakerTimes(data);
+    for (var spkr in speakerTimes) {
+        totalTime += speakerTimes[spkr];
+    }
+    jQuery('#diarization').html(diarizationHtml);
+    for (spkr in speakerTimes) {
+        speakerTime = Math.round(speakerTimes[spkr]);
+        percent = (Math.floor(10000 * speakerTimes[spkr] / totalTime)) / 100;
+        speakerCell = '<td>Speaker ' + spkr + '</td>';
+        timeCell = '<td align="right">' + speakerTime + '</td>';
+        percentCell = '<td align="right">' + percent + '%</td>';
+        $('#speaker_table > tbody:last-child').append('<tr>' + speakerCell + timeCell + percentCell + '</tr>');
+
+        // update Speaker Percentage Bar
+        bar = '<div class="progress-bar speaker-' + spkr + '"  style="width: ' + percent + '%">' +
+            '<span class="sr-only">Speaker ' + spkr + '</span>' +
+            '</div>';
+        $('#speaker_bar').append(bar);
+    }
+}
+
+function displayAaltoDiarization(data) {
     var diarizationHtml = "<div id=\"speaker_bar\" class=\"progress\">\n" +
         "    </div>\n" +
         "\n" +
@@ -54,7 +123,7 @@ function displayDiarization(data) {
         "</div>\n";
     var lines = data.split(/\n/);
     var totalTime = 0;
-    speakerTimes = getSpeakerTimes(lines);
+    speakerTimes = getAaltoSpeakerTimes(lines);
     var times = "";
     for (var spkr in speakerTimes) {
         totalTime += speakerTimes[spkr];
