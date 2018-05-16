@@ -260,11 +260,15 @@ function diarization() {
 }
 
 function transcription() {
-    $.ajax({
-        url: transcriptionReadyURL,
-        error: transcriptionNotReady,
-        success: transcriptionReady
-    });
+    if (transcriber == null) {
+        jQuery('#transcription_heading').html("")
+    } else {
+        $.ajax({
+            url: transcriptionReadyURL,
+            error: transcriptionNotReady,
+            success: transcriptionReady
+        });
+    }
 }
 
 if (typeof module !== 'undefined') {
