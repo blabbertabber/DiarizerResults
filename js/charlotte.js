@@ -26,8 +26,8 @@ function diarization() {
 }
 
 function transcription() {
-    if (transcriber == null) {
-        jQuery('#transcription_heading').html("Sigh no transcription")
+    if (transcriber == 'null') {
+        jQuery('#transcription_heading').html('')
     } else {
         $.ajax({
             url: transcriptionReadyURL,
@@ -40,10 +40,8 @@ function transcription() {
 function diarizationReady() {
     switch (diarizer) {
         case 'IBM':
-            $.ajax({
-                url: diarizationIBMURL,
-                success: displayIBMDiarization
-            });
+            loadIBMResults();
+            displayIBMDiarization(IBMResults);
             break;
         case 'Aalto':
             $.ajax({
@@ -53,6 +51,21 @@ function diarizationReady() {
             break;
         default:
     }
+}
+
+function loadIBMResults() {
+    if (IBMResults == null) {
+        $.ajax({
+            dataType: "json",
+            url: IBMResultsURL,
+            success: initializeIBMResults,
+            async: false
+        });
+    }
+}
+
+function initializeIBMResults(data) {
+    IBMResults = data;
 }
 
 function diarizationNotReady() {
@@ -80,10 +93,24 @@ function diarizationNotReady() {
 }
 
 function transcriptionReady() {
+    switch (transcriber) {
+        case 'CMU Sphinx 4':
+            $.ajax({
+                url: transcriptionCMUURL,
+                success: displayCMUTranscription
+            });
+            break;
+        case 'IBM':
+            loadIBMResults();
+            displayIBMTranscription(IBMResults);
+            break;
+        default:
+    }
     jQuery('#transcription_wait').html(""); // clear out the "Processing" notification
+
     $.ajax({
-        url: transcriptionURL,
-        success: displayTranscription
+        url: transcriptionCMUURL,
+        success: displayCMUTranscription
     });
 }
 
@@ -110,14 +137,14 @@ function transcriptionNotReady() {
         "</div>\n";
     jQuery('#transcription_wait').html(transcriptionHtml);
     $.ajax({
-        url: transcriptionURL,
+        url: transcriptionCMUURL,
         type: 'get',
-        success: displayTranscription
+        success: displayCMUTranscription
     }); // show as much transcription as we've gotten so far
     setTimeout(transcription, 3000);
 }
 
-getAaltoSpeakerTimes = function (lines) {
+function getAaltoSpeakerTimes(lines) {
     var speakerTimes = {};
     lines.forEach(function (line) {
         if (line.length > 0) {
@@ -132,9 +159,9 @@ getAaltoSpeakerTimes = function (lines) {
         }
     });
     return speakerTimes;
-};
+}
 
-getIBMSpeakerTimes = function (speakerData) {
+function getIBMSpeakerTimes(speakerData) {
     var speakerTimes = {};
     speakerData.forEach(function (speakerDatum) {
         speakerNum = speakerDatum.speaker;
@@ -144,50 +171,6 @@ getIBMSpeakerTimes = function (speakerData) {
         speakerTimes[speakerNum] += speakerDatum.to - speakerDatum.from;
     });
     return speakerTimes;
-};
-
-function displayIBMDiarization(data) {
-    var diarizationHtml = "<div id=\"speaker_bar\" class=\"progress\">\n" +
-        "    </div>\n" +
-        "\n" +
-        "    <div class=\"panel panel-default\">\n" +
-        "    <div class=\"panel-heading\">\n" +
-        "    <h3 class=\"panel-title\">Aggregate View</h3>\n" +
-        "</div>\n" +
-        "<div class=\"panel-body\">\n" +
-        "    <table class=\"table\" id=\"speaker_table\">\n" +
-        "    <thead>\n" +
-        "    <tr>\n" +
-        "    <th>Speaker</th>\n" +
-        "    <th style=\"text-align: right\">Duration (seconds)</th>\n" +
-        "    <th style=\"text-align: right\">Percent of Total Speaking Time</th>\n" +
-        "</tr>\n" +
-        "</thead>\n" +
-        "<tbody>\n" +
-        "</tbody>\n" +
-        "</table>\n" +
-        "</div>\n" +
-        "</div>\n";
-    var totalTime = 0;
-    speakerTimes = getIBMSpeakerTimes(data);
-    for (var spkr in speakerTimes) {
-        totalTime += speakerTimes[spkr];
-    }
-    jQuery('#diarization').html(diarizationHtml);
-    for (spkr in speakerTimes) {
-        speakerTime = Math.round(speakerTimes[spkr]);
-        percent = (Math.floor(10000 * speakerTimes[spkr] / totalTime)) / 100;
-        speakerCell = '<td>Speaker ' + spkr + '</td>';
-        timeCell = '<td align="right">' + speakerTime + '</td>';
-        percentCell = '<td align="right">' + percent + '%</td>';
-        $('#speaker_table > tbody:last-child').append('<tr>' + speakerCell + timeCell + percentCell + '</tr>');
-
-        // update Speaker Percentage Bar
-        bar = '<div class="progress-bar speaker-' + spkr + '"  style="width: ' + percent + '%">' +
-            '<span class="sr-only">Speaker ' + spkr + '</span>' +
-            '</div>';
-        $('#speaker_bar').append(bar);
-    }
 }
 
 function displayAaltoDiarization(data) {
@@ -236,6 +219,62 @@ function displayAaltoDiarization(data) {
     }
 }
 
+function displayIBMDiarization(results) {
+    var diarizationHtml = "<div id=\"speaker_bar\" class=\"progress\">\n" +
+        "    </div>\n" +
+        "\n" +
+        "    <div class=\"panel panel-default\">\n" +
+        "    <div class=\"panel-heading\">\n" +
+        "    <h3 class=\"panel-title\">Aggregate View</h3>\n" +
+        "</div>\n" +
+        "<div class=\"panel-body\">\n" +
+        "    <table class=\"table\" id=\"speaker_table\">\n" +
+        "    <thead>\n" +
+        "    <tr>\n" +
+        "    <th>Speaker</th>\n" +
+        "    <th style=\"text-align: right\">Duration (seconds)</th>\n" +
+        "    <th style=\"text-align: right\">Percent of Total Speaking Time</th>\n" +
+        "</tr>\n" +
+        "</thead>\n" +
+        "<tbody>\n" +
+        "</tbody>\n" +
+        "</table>\n" +
+        "</div>\n" +
+        "</div>\n";
+    var totalTime = 0;
+    speakerTimes = getIBMSpeakerTimes(results);
+    for (var spkr in speakerTimes) {
+        totalTime += speakerTimes[spkr];
+    }
+    jQuery('#diarization').html(diarizationHtml);
+    for (spkr in speakerTimes) {
+        speakerTime = Math.round(speakerTimes[spkr]);
+        percent = (Math.floor(10000 * speakerTimes[spkr] / totalTime)) / 100;
+        speakerCell = '<td>Speaker ' + spkr + '</td>';
+        timeCell = '<td align="right">' + speakerTime + '</td>';
+        percentCell = '<td align="right">' + percent + '%</td>';
+        $('#speaker_table > tbody:last-child').append('<tr>' + speakerCell + timeCell + percentCell + '</tr>');
+
+        // update Speaker Percentage Bar
+        bar = '<div class="progress-bar speaker-' + spkr + '"  style="width: ' + percent + '%">' +
+            '<span class="sr-only">Speaker ' + spkr + '</span>' +
+            '</div>';
+        $('#speaker_bar').append(bar);
+    }
+}
+
+function displayCMUTranscription(info) {
+    jQuery('#transcription').html(newlinesToHTMLBreaks(info));
+}
+
+function displayIBMTranscription(speakerData) {
+    for (spkr in speakerData) {
+        logue = '<dt>Speaker ' + speakerData[spkr].speaker + ':</dt>'
+            + '<dd>' + speakerData[spkr].transcript + '</dd>';
+        $('#transcription').append(logue);
+    }
+}
+
 function durationOfMeeting(wavFileSizeInBytes) {
     var milliseconds = wavFileSizeInBytes / 32; // 32000 bytes/sec => 32 bytes/millisecond
     return millisecondsToString(milliseconds);
@@ -257,10 +296,6 @@ function millisecondsToString(milliseconds) {
         timeString += " " + seconds + (seconds !== 1 ? " seconds" : " second");
     }
     return timeString;
-}
-
-function displayTranscription(info) {
-    jQuery('#transcription').html(newlinesToHTMLBreaks(info));
 }
 
 function newlinesToHTMLBreaks(info) {
