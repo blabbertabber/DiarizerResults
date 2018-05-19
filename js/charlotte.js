@@ -26,7 +26,7 @@ function diarization() {
 }
 
 function transcription() {
-    if (transcriber == 'null') {
+    if (transcriber === 'null') {
         jQuery('#transcription_heading').html('')
     } else {
         $.ajax({
