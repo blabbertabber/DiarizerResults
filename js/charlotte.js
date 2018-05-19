@@ -1,5 +1,122 @@
 // https://diarizer.blabbertabber.com?meeting=test
 
+function timesAndSizeFromServer() {
+    $.ajax({
+        dataType: "json",
+        url: timesAndSizeURL,
+        success: initializeTimesAndSize,
+        async: false
+    });
+}
+
+function initializeTimesAndSize(data) {
+    diarizer = data.diarizer;
+    transcriber = data.transcriber;
+    wavFileSizeInBytes = data.wav_file_size_in_bytes;
+    estimatedDiarizationFinishTime = data.estimated_diarization_finish_time;
+    estimatedTranscriptionFinishTime = data.estimated_transcription_finish_time;
+}
+
+function diarization() {
+    $.ajax({
+        url: diarizationReadyURL,
+        error: diarizationNotReady,
+        success: diarizationReady
+    });
+}
+
+function transcription() {
+    if (transcriber == null) {
+        jQuery('#transcription_heading').html("Sigh no transcription")
+    } else {
+        $.ajax({
+            url: transcriptionReadyURL,
+            error: transcriptionNotReady,
+            success: transcriptionReady
+        });
+    }
+}
+
+function diarizationReady() {
+    switch (diarizer) {
+        case 'IBM':
+            $.ajax({
+                url: diarizationIBMURL,
+                success: displayIBMDiarization
+            });
+            break;
+        case 'Aalto':
+            $.ajax({
+                url: diarizationAaltoURL,
+                success: displayAaltoDiarization
+            });
+            break;
+        default:
+    }
+}
+
+function diarizationNotReady() {
+    var finishTime = new Date(estimatedDiarizationFinishTime);
+    var duration = finishTime - Date.now();
+    jQuery('#diarization').html("<div class=\"row\">\n" +
+        "    <div class=\"col-md-6 col-md-offset-3\">\n" +
+        "        <h1>Processing...</h1>\n" +
+        "\n" +
+        "    </div>\n" +
+        "\n" +
+        "    <div class=\"row\">\n" +
+        "        <div class=\"col-md-6 col-md-offset-3\">\n" +
+        "            <div>\n" +
+        "                <br/>\n" +
+        "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your recorded  meeting" +
+        "                    was " + durationOfMeeting(wavFileSizeInBytes) + " long. " +
+        "                    We think we'll have figured out who spoke in " +
+        millisecondsToString(duration) + ".</p>\n" +
+        "            </div>\n" +
+        "        </div>\n" +
+        "    </div>\n" +
+        "</div>\n");
+    setTimeout(diarization, 3000);
+}
+
+function transcriptionReady() {
+    jQuery('#transcription_wait').html(""); // clear out the "Processing" notification
+    $.ajax({
+        url: transcriptionURL,
+        success: displayTranscription
+    });
+}
+
+function transcriptionNotReady() {
+    var finishTime = new Date(estimatedTranscriptionFinishTime);
+    var duration = finishTime - Date.now();
+    var transcriptionHtml = "<div class=\"row\">\n" +
+        "    <div class=\"col-md-6 col-md-offset-3\">\n" +
+        "        <h1>Processing...</h1>\n" +
+        "\n" +
+        "    </div>\n" +
+        "\n" +
+        "    <div class=\"row\">\n" +
+        "        <div class=\"col-md-6 col-md-offset-3\">\n" +
+        "            <div>\n" +
+        "                <br/>\n" +
+        "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your recorded  meeting" +
+        "                    was " + durationOfMeeting(wavFileSizeInBytes) + " long. " +
+        "                    We think we'll finish transcribing it in " +
+        millisecondsToString(duration) + ".</p>\n" +
+        "            </div>\n" +
+        "        </div>\n" +
+        "    </div>\n" +
+        "</div>\n";
+    jQuery('#transcription_wait').html(transcriptionHtml);
+    $.ajax({
+        url: transcriptionURL,
+        type: 'get',
+        success: displayTranscription
+    }); // show as much transcription as we've gotten so far
+    setTimeout(transcription, 3000);
+}
+
 getAaltoSpeakerTimes = function (lines) {
     var speakerTimes = {};
     lines.forEach(function (line) {
@@ -28,32 +145,6 @@ getIBMSpeakerTimes = function (speakerData) {
     });
     return speakerTimes;
 };
-
-function initializeTimesAndSize(data) {
-    diarizer = data.diarizer;
-    transcriber = data.transcriber;
-    wavFileSizeInBytes = data.wav_file_size_in_bytes;
-    estimatedDiarizationFinishTime = data.estimated_diarization_finish_time;
-    estimatedTranscriptionFinishTime = data.estimated_transcription_finish_time;
-}
-
-function diarizationReady() {
-    switch (diarizer) {
-        case 'IBM':
-            $.ajax({
-                url: diarizationIBMURL,
-                success: displayIBMDiarization
-            });
-            break;
-        case 'Aalto':
-            $.ajax({
-                url: diarizationAaltoURL,
-                success: displayAaltoDiarization
-            });
-            break;
-        default:
-    }
-}
 
 function displayIBMDiarization(data) {
     var diarizationHtml = "<div id=\"speaker_bar\" class=\"progress\">\n" +
@@ -145,30 +236,6 @@ function displayAaltoDiarization(data) {
     }
 }
 
-function diarizationNotReady() {
-    var finishTime = new Date(estimatedDiarizationFinishTime);
-    var duration = finishTime - Date.now();
-    jQuery('#diarization').html("<div class=\"row\">\n" +
-        "    <div class=\"col-md-6 col-md-offset-3\">\n" +
-        "        <h1>Processing...</h1>\n" +
-        "\n" +
-        "    </div>\n" +
-        "\n" +
-        "    <div class=\"row\">\n" +
-        "        <div class=\"col-md-6 col-md-offset-3\">\n" +
-        "            <div>\n" +
-        "                <br/>\n" +
-        "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your recorded  meeting" +
-        "                    was " + durationOfMeeting(wavFileSizeInBytes) + " long. " +
-        "                    We think we'll have figured out who spoke in " +
-        millisecondsToString(duration) + ".</p>\n" +
-        "            </div>\n" +
-        "        </div>\n" +
-        "    </div>\n" +
-        "</div>\n");
-    setTimeout(diarization, 3000);
-}
-
 function durationOfMeeting(wavFileSizeInBytes) {
     var milliseconds = wavFileSizeInBytes / 32; // 32000 bytes/sec => 32 bytes/millisecond
     return millisecondsToString(milliseconds);
@@ -192,36 +259,6 @@ function millisecondsToString(milliseconds) {
     return timeString;
 }
 
-function transcriptionNotReady() {
-    var finishTime = new Date(estimatedTranscriptionFinishTime);
-    var duration = finishTime - Date.now();
-    var transcriptionHtml = "<div class=\"row\">\n" +
-        "    <div class=\"col-md-6 col-md-offset-3\">\n" +
-        "        <h1>Processing...</h1>\n" +
-        "\n" +
-        "    </div>\n" +
-        "\n" +
-        "    <div class=\"row\">\n" +
-        "        <div class=\"col-md-6 col-md-offset-3\">\n" +
-        "            <div>\n" +
-        "                <br/>\n" +
-        "                <p class=\"lead\"><span class=\"glyphicon glyphicon-hourglass\" aria-hidden=\"true\"></span> Your recorded  meeting" +
-        "                    was " + durationOfMeeting(wavFileSizeInBytes) + " long. " +
-        "                    We think we'll finish transcribing it in " +
-        millisecondsToString(duration) + ".</p>\n" +
-        "            </div>\n" +
-        "        </div>\n" +
-        "    </div>\n" +
-        "</div>\n";
-    jQuery('#transcription_wait').html(transcriptionHtml);
-    $.ajax({
-        url: transcriptionURL,
-        type: 'get',
-        success: displayTranscription
-    }); // show as much transcription as we've gotten so far
-    setTimeout(transcription, 3000);
-}
-
 function displayTranscription(info) {
     jQuery('#transcription').html(newlinesToHTMLBreaks(info));
 }
@@ -233,43 +270,6 @@ function newlinesToHTMLBreaks(info) {
         out += line + "<br/>";
     });
     return (out);
-}
-
-function transcriptionReady() {
-    jQuery('#transcription_wait').html(""); // clear out the "Processing" notification
-    $.ajax({
-        url: transcriptionURL,
-        success: displayTranscription
-    });
-}
-
-function timesAndSizeFromServer() {
-    $.ajax({
-        dataType: "json",
-        url: timesAndSizeURL,
-        success: initializeTimesAndSize,
-        async: false
-    });
-}
-
-function diarization() {
-    $.ajax({
-        url: diarizationReadyURL,
-        error: diarizationNotReady,
-        success: diarizationReady
-    });
-}
-
-function transcription() {
-    if (transcriber == null) {
-        jQuery('#transcription_heading').html("")
-    } else {
-        $.ajax({
-            url: transcriptionReadyURL,
-            error: transcriptionNotReady,
-            success: transcriptionReady
-        });
-    }
 }
 
 if (typeof module !== 'undefined') {
