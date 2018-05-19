@@ -247,7 +247,8 @@ function timesAndSizeFromServer() {
     $.ajax({
         dataType: "json",
         url: timesAndSizeURL,
-        success: initializeTimesAndSize
+        success: initializeTimesAndSize,
+        async: false
     });
 }
 

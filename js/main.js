@@ -1,4 +1,4 @@
-// Global variables are the devil's candy
+// Global variables are the devil's candy, and I like candy a lot
 var HostURL = window.location.href.split('?')[0];
 var meetingGuid = window.location.href.split('?')[1].split('=')[1];
 var diarizationAaltoURL = HostURL + '/' + meetingGuid + '/diarization.txt';
