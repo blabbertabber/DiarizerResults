@@ -5,3 +5,7 @@
 # DiarizerResults
 
 A JS library which interprets and displays diarization and transcription results.
+
+## Developer Notes
+
+Developer notes, such as building and test a release, are available [here](docs/DEVELOPER.md).
