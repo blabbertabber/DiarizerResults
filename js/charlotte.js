@@ -5,7 +5,13 @@ function timesAndSizeFromServer() {
         dataType: "json",
         url: timesAndSizeURL,
         success: initializeTimesAndSize,
-        async: false
+        async: false,
+        statusCode: {
+            404: function() {
+                // server says: page not found; let's redirect to 404 page
+                window.location.href = timesAndSizeURL;
+            }
+        }
     });
 }
 
